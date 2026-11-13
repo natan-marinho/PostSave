@@ -15,11 +15,12 @@ import { Icon } from './src/components';
 import { DataProvider, useData } from './src/data';
 import PostsScreen from './src/posts/PostsScreen';
 import PromptsScreen from './src/prompts/PromptsScreen';
+import Ajustes from './src/ajustes/Ajustes';
 import { C, F } from './src/theme';
 
 const TELAS = [
-  { id: 'posts', label: 'Posts', titulo: 'Pastas de posts', icon: 'folder-image', Tela: PostsScreen },
-  { id: 'prompts', label: 'Prompts', titulo: 'Prompts de IA', icon: 'robot-happy-outline', Tela: PromptsScreen },
+  { id: 'posts', label: 'Posts', titulo: 'Posts', icon: 'folder-image', Tela: PostsScreen },
+  { id: 'prompts', label: 'Prompts', titulo: 'Prompts para barbearia', icon: 'robot-happy-outline', Tela: PromptsScreen },
 ];
 
 export default function App() {
@@ -53,6 +54,7 @@ const Carregando = () => (
 function Conteudo() {
   const { pronto } = useData();
   const [tela, setTela] = useState('posts');
+  const [ajustes, setAjustes] = useState(false);
   const atual = TELAS.find((t) => t.id === tela);
   const Tela = atual.Tela;
 
@@ -69,11 +71,14 @@ function Conteudo() {
             </Text>
             <Text style={st.titulo}>{atual.titulo}</Text>
           </View>
+          <Pressable onPress={() => setAjustes(true)} hitSlop={10} style={st.engrenagem}>
+            <Icon name="cog-outline" size={22} color={C.text} />
+          </Pressable>
         </View>
       </SafeAreaView>
       <View style={st.faixa} />
 
-      <View style={{ flex: 1 }}>{pronto ? <Tela key={tela} /> : <Carregando />}</View>
+      <View style={{ flex: 1 }}>{pronto ? <Tela key={tela} abrirAjustes={() => setAjustes(true)} /> : <Carregando />}</View>
 
       <SafeAreaView edges={['bottom']} style={st.menu}>
         {TELAS.map((t) => {
@@ -90,6 +95,8 @@ function Conteudo() {
           );
         })}
       </SafeAreaView>
+
+      <Ajustes visible={ajustes} onClose={() => setAjustes(false)} />
     </View>
   );
 }
@@ -100,6 +107,7 @@ const st = StyleSheet.create({
   logo: { width: 40, height: 40, borderRadius: 12, backgroundColor: C.lime, alignItems: 'center', justifyContent: 'center', transform: [{ rotate: '-8deg' }] },
   marca: { fontFamily: F.display, color: C.text, fontSize: 15, letterSpacing: 3 },
   titulo: { fontFamily: F.display, color: C.text, fontSize: 30, letterSpacing: 1, marginTop: -4 },
+  engrenagem: { width: 40, height: 40, borderRadius: 20, backgroundColor: C.surface2, alignItems: 'center', justifyContent: 'center' },
   faixa: { height: 4, backgroundColor: C.lime },
   menu: { flexDirection: 'row', backgroundColor: '#111111', borderTopWidth: 1, borderTopColor: C.border, paddingTop: 6, paddingHorizontal: 4 },
   menuItem: { flex: 1, alignItems: 'center', paddingBottom: 6 },

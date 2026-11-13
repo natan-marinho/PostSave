@@ -1,44 +1,35 @@
 import React, { useMemo, useState } from 'react';
-import { Alert, FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
-import { Button, Card, Chip, Empty, Fab, Field, Icon, Sheet, T } from '../components';
-import { useData } from '../data';
+import { Button, Chip, Empty, Fab, Field, Icon, Sheet, T } from '../components';
+import { camposDe, useData } from '../data';
 import { uid } from '../date';
 import { C, F } from '../theme';
-import { CATEGORIAS, CHATS } from './padrao';
+import { CATEGORIAS, catDe } from './padrao';
+import UsarPrompt from './UsarPrompt';
 
-const normalizar = (t) =>
-  (t || '')
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '');
-
-const catDe = (id) => CATEGORIAS.find((c) => c.id === id) || CATEGORIAS[CATEGORIAS.length - 1];
-
-export default function PromptsScreen() {
-  const { prompts, setPrompts, copiarPrompt, abrirChat, chat, setChatId } = useData();
-  const [busca, setBusca] = useState('');
+export default function PromptsScreen({ abrirAjustes }) {
+  const { prompts, setPrompts, perfilIncompleto } = useData();
   const [cat, setCat] = useState('todos');
-  const [aberto, setAberto] = useState(null);
+  const [usando, setUsando] = useState(null);
   const [form, setForm] = useState(null);
 
-  const lista = useMemo(() => {
-    const q = normalizar(busca);
-    return prompts
-      .filter((p) => cat === 'todos' || p.categoria === cat)
-      .filter((p) => !q || normalizar(p.titulo + ' ' + p.texto).includes(q))
-      .sort((a, b) => (b.usos || 0) - (a.usos || 0) || a.titulo.localeCompare(b.titulo));
-  }, [prompts, busca, cat]);
+  const grupos = useMemo(() => {
+    const cats = cat === 'todos' ? CATEGORIAS : CATEGORIAS.filter((c) => c.id === cat);
+    return cats
+      .map((c) => ({ c, itens: prompts.filter((p) => catDe(p.categoria).id === c.id).sort((a, b) => (b.usos || 0) - (a.usos || 0)) }))
+      .filter((g) => g.itens.length);
+  }, [prompts, cat]);
 
   const salvar = () => {
-    if (!form.titulo.trim()) return Alert.alert('Falta o título', 'Ex.: Legenda para Reels');
+    if (!form.titulo.trim()) return Alert.alert('Falta o título', 'Ex.: Legenda de degradê');
     if (!form.texto.trim()) return Alert.alert('Falta o prompt', 'Escreva ou cole o texto do prompt.');
-    const dados = { titulo: form.titulo.trim(), texto: form.texto.trim(), categoria: form.categoria };
+    const dados = { titulo: form.titulo.trim(), descricao: form.descricao.trim(), texto: form.texto.trim(), categoria: form.categoria };
     if (form.id) {
       setPrompts((l) => l.map((p) => (p.id === form.id ? { ...p, ...dados } : p)));
-      setAberto((a) => (a && a.id === form.id ? { ...a, ...dados } : a));
+      setUsando((u) => (u && u.id === form.id ? { ...u, ...dados } : u));
     } else {
-      setPrompts((l) => [{ id: uid(), ...dados, usos: 0, criadoEm: new Date().toISOString() }, ...l]);
+      setPrompts((l) => [{ id: uid(), ...dados, tipos: [], usos: 0, ultimos: {}, criadoEm: new Date().toISOString() }, ...l]);
     }
     setForm(null);
   };
@@ -51,7 +42,7 @@ export default function PromptsScreen() {
         style: 'destructive',
         onPress: () => {
           setPrompts((l) => l.filter((x) => x.id !== p.id));
-          setAberto(null);
+          setUsando(null);
         },
       },
     ]);
@@ -62,126 +53,82 @@ export default function PromptsScreen() {
     setForm((f) => ({ ...f, texto: f.texto ? f.texto + '\n' + txt : txt }));
   };
 
-  const topo = (
-    <View>
-      <Field icon="magnify" value={busca} onChangeText={setBusca} placeholder="Buscar prompt" />
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingBottom: 4 }}>
+  return (
+    <View style={{ flex: 1 }}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={s.chips}>
         <Chip label="Todos" selected={cat === 'todos'} onPress={() => setCat('todos')} />
         {CATEGORIAS.map((c) => (
           <Chip key={c.id} label={c.label} icon={c.icon} selected={cat === c.id} onPress={() => setCat(c.id)} />
         ))}
       </ScrollView>
 
-      <View style={s.chatBox}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-          <Icon name="robot-happy-outline" size={18} color={C.lime} />
-          <T v="label" style={{ color: C.text }}>
-            Chat de IA
-          </T>
-        </View>
-        <View style={{ flexDirection: 'row', gap: 8 }}>
-          {CHATS.map((c) => (
-            <Pressable key={c.id} onPress={() => setChatId(c.id)} style={[s.chatOpt, chat.id === c.id && s.chatOptOn]}>
-              <Text style={[s.chatTxt, chat.id === c.id && { color: C.onLime }]}>{c.label}</Text>
-            </Pressable>
-          ))}
-        </View>
-      </View>
-    </View>
-  );
+      <ScrollView contentContainerStyle={{ padding: 16, paddingTop: 8, paddingBottom: 110 }}>
+        {perfilIncompleto && (
+          <Pressable onPress={abrirAjustes} style={({ pressed }) => [s.perfil, pressed && { opacity: 0.8 }]}>
+            <Icon name="store-edit-outline" size={22} color={C.warn} />
+            <View style={{ flex: 1 }}>
+              <T v="title" style={{ fontSize: 14 }}>
+                Complete o perfil da barbearia
+              </T>
+              <T v="small">Bairro, WhatsApp e Instagram entram em todo prompt.</T>
+            </View>
+            <Icon name="chevron-right" size={22} color={C.warn} />
+          </Pressable>
+        )}
 
-  return (
-    <View style={{ flex: 1 }}>
-      <FlatList
-        data={lista}
-        keyExtractor={(p) => p.id}
-        ListHeaderComponent={topo}
-        keyboardShouldPersistTaps="handled"
-        contentContainerStyle={{ padding: 16, paddingBottom: 110 }}
-        ListEmptyComponent={
-          <Empty icon="text-box-search-outline">
-            {prompts.length ? 'Nenhum prompt encontrado.' : 'Toque no + para criar seu primeiro prompt.'}
-          </Empty>
-        }
-        renderItem={({ item: p }) => {
-          const c = catDe(p.categoria);
-          return (
-            <Card onPress={() => setAberto(p)} onLongPress={() => setForm({ ...p })}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                <View style={s.ico}>
-                  <Icon name={c.icon} size={22} color={C.lime} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <T v="title" numberOfLines={1}>
-                    {p.titulo}
-                  </T>
-                  <T v="small">
-                    {c.label}
-                    {p.usos ? ` · usado ${p.usos}x` : ''}
-                  </T>
-                </View>
-              </View>
-              <Text style={s.preview} numberOfLines={2}>
-                {p.texto}
-              </Text>
-              <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
-                <Button title="Copiar" icon="content-copy" small onPress={() => copiarPrompt(p)} style={{ flex: 1 }} />
-                <Button
-                  title={chat.label}
-                  icon="open-in-new"
-                  variant="outline"
-                  small
-                  onPress={async () => {
-                    await copiarPrompt(p, { perguntar: false });
-                    abrirChat();
-                  }}
-                  style={{ flex: 1 }}
-                />
-              </View>
-            </Card>
-          );
-        }}
-      />
+        {!grupos.length && <Empty icon="text-box-outline">Nenhum prompt aqui. Toque no + para criar.</Empty>}
 
-      <Fab onPress={() => setForm({ id: null, titulo: '', texto: '', categoria: cat === 'todos' ? 'legenda' : cat })} />
+        {grupos.map(({ c, itens }) => (
+          <View key={c.id} style={{ marginBottom: 10 }}>
+            {cat === 'todos' && (
+              <T v="label" style={{ marginBottom: 8, marginTop: 6 }}>
+                {c.label}
+              </T>
+            )}
+            {itens.map((p) => {
+              const n = camposDe(p.texto).length;
+              return (
+                <Pressable key={p.id} onPress={() => setUsando(p)} style={({ pressed }) => [s.item, pressed && { opacity: 0.7 }]}>
+                  <View style={s.ico}>
+                    <Icon name={c.icon} size={20} color={C.lime} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={s.titulo} numberOfLines={1}>
+                      {p.titulo}
+                    </Text>
+                    <Text style={s.desc} numberOfLines={1}>
+                      {p.descricao || (n ? `${n} campo${n > 1 ? 's' : ''} para preencher` : 'Pronto para copiar')}
+                    </Text>
+                  </View>
+                  <Icon name="chevron-right" size={22} color={C.faint} />
+                </Pressable>
+              );
+            })}
+          </View>
+        ))}
+      </ScrollView>
 
-      {/* Ver prompt */}
-      <Sheet
-        visible={!!aberto && !form}
-        title={aberto?.titulo || ''}
-        subtitle={aberto ? catDe(aberto.categoria).label : ''}
-        onClose={() => setAberto(null)}
-        footer={
-          aberto && (
+      <Fab onPress={() => setForm({ id: null, titulo: '', descricao: '', texto: '', categoria: cat === 'todos' ? 'legenda' : cat })} />
+
+      {/* Usar (preencher e copiar) */}
+      <UsarPrompt
+        visible={!!usando && !form}
+        prompt={usando}
+        onClose={() => setUsando(null)}
+        rodape={
+          usando && (
             <>
-              <Button icon="delete-outline" variant="danger" small onPress={() => excluir(aberto)} style={{ width: 52 }} />
-              <Button title="Editar" icon="pencil-outline" variant="dark" small onPress={() => setForm({ ...aberto })} style={{ flex: 1 }} />
-              <Button
-                title={`Copiar e abrir`}
-                icon="robot-outline"
-                small
-                onPress={async () => {
-                  await copiarPrompt(aberto, { perguntar: false });
-                  abrirChat();
-                }}
-                style={{ flex: 1.4 }}
-              />
+              <Button icon="delete-outline" variant="danger" small onPress={() => excluir(usando)} style={{ width: 48 }} />
+              <Button icon="pencil-outline" variant="dark" small onPress={() => setForm({ descricao: '', ...usando })} style={{ width: 48 }} />
             </>
           )
         }
-      >
-        {aberto && (
-          <Text selectable style={s.texto}>
-            {aberto.texto}
-          </Text>
-        )}
-      </Sheet>
+      />
 
       {/* Novo / editar */}
       <Sheet
         visible={!!form}
         title={form?.id ? 'Editar prompt' : 'Novo prompt'}
-        subtitle={form?.id ? '' : 'Guarde aqui os prompts que você mais usa'}
         onClose={() => setForm(null)}
         footer={
           <>
@@ -192,23 +139,31 @@ export default function PromptsScreen() {
       >
         {form && (
           <>
-            <Field label="Título" icon="format-title" value={form.titulo} onChangeText={(titulo) => setForm({ ...form, titulo })} placeholder="Ex.: Legenda para Reels" />
+            <Field label="Título" icon="format-title" value={form.titulo} onChangeText={(titulo) => setForm({ ...form, titulo })} placeholder="Ex.: Legenda de degradê" />
+            <Field label="Para que serve (opcional)" icon="information-outline" value={form.descricao} onChangeText={(descricao) => setForm({ ...form, descricao })} placeholder="Ex.: Foto de antes e depois" />
             <Text style={s.label}>Categoria</Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
               {CATEGORIAS.map((c) => (
                 <Chip key={c.id} label={c.label} icon={c.icon} selected={form.categoria === c.id} onPress={() => setForm({ ...form, categoria: c.id })} />
               ))}
             </View>
-            <Button title="Colar texto copiado" icon="clipboard-text-outline" variant="outline" small onPress={colar} style={{ marginBottom: 12 }} />
+            <View style={s.dica}>
+              <Icon name="lightbulb-on-outline" size={18} color={C.lime} />
+              <Text style={s.dicaTxt}>
+                Escreva entre chaves o que muda a cada uso, como <Text style={{ color: C.lime }}>{'{Nome do corte}'}</Text> ou{' '}
+                <Text style={{ color: C.lime }}>{'{Preço}'}</Text>. O app pergunta antes de copiar. O perfil da barbearia já vai junto.
+              </Text>
+            </View>
             <Field
               label="Prompt"
               value={form.texto}
               onChangeText={(texto) => setForm({ ...form, texto })}
-              placeholder="Escreva o que a IA deve fazer"
+              placeholder="O que a IA deve fazer?"
               multiline
               textAlignVertical="top"
               style={{ minHeight: 180 }}
             />
+            <Button title="Colar texto copiado" icon="clipboard-text-outline" variant="outline" small onPress={colar} />
           </>
         )}
       </Sheet>
@@ -217,12 +172,13 @@ export default function PromptsScreen() {
 }
 
 const s = StyleSheet.create({
-  ico: { width: 42, height: 42, borderRadius: 12, backgroundColor: C.limeSoft, alignItems: 'center', justifyContent: 'center' },
-  preview: { fontFamily: F.regular, fontSize: 13.5, color: C.muted, lineHeight: 19, marginTop: 10 },
-  texto: { fontFamily: F.regular, fontSize: 15, color: C.text, lineHeight: 23 },
+  chips: { gap: 8, paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 },
+  perfil: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: C.warnSoft, borderRadius: 16, padding: 14, marginBottom: 14, borderWidth: 1, borderColor: 'rgba(255,178,63,0.35)' },
+  item: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: C.surface, borderRadius: 14, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: C.border },
+  ico: { width: 40, height: 40, borderRadius: 12, backgroundColor: C.limeSoft, alignItems: 'center', justifyContent: 'center' },
+  titulo: { fontFamily: F.bold, fontSize: 15, color: C.text },
+  desc: { fontFamily: F.medium, fontSize: 12.5, color: C.muted, marginTop: 1 },
   label: { fontFamily: F.bold, fontSize: 11.5, color: C.muted, marginBottom: 8, letterSpacing: 1, textTransform: 'uppercase' },
-  chatBox: { backgroundColor: C.surface, borderRadius: 16, padding: 14, marginTop: 12, marginBottom: 16, borderWidth: 1, borderColor: C.border },
-  chatOpt: { flex: 1, paddingVertical: 9, borderRadius: 10, alignItems: 'center', backgroundColor: C.surface2 },
-  chatOptOn: { backgroundColor: C.lime },
-  chatTxt: { fontFamily: F.bold, fontSize: 13, color: C.text },
+  dica: { flexDirection: 'row', gap: 10, alignItems: 'flex-start', backgroundColor: C.limeSoft, borderRadius: 12, padding: 12, marginBottom: 14 },
+  dicaTxt: { flex: 1, fontFamily: F.medium, fontSize: 12.5, color: C.text, lineHeight: 18 },
 });

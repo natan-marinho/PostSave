@@ -76,6 +76,29 @@ export function ActionTile({ icon, label, color = C.text, bg = C.surface2, activ
   );
 }
 
+/** Abas no estilo da tela Segurança do Clube Studio 8. opcoes: [{ id, label, icon, feito }] */
+export function Segmento({ opcoes, valor, onChange, style }) {
+  return (
+    <View style={[st.segment, style]}>
+      {opcoes.map((o) => {
+        const on = o.id === valor;
+        return (
+          <Pressable key={o.id} onPress={() => onChange(o.id)} style={[st.segBtn, on && st.segOn]}>
+            {o.feito ? (
+              <Icon name="check-circle" size={16} color={on ? C.onLime : C.lime} />
+            ) : (
+              o.icon && <Icon name={o.icon} size={16} color={on ? C.onLime : C.muted} />
+            )}
+            <Text style={[st.segTxt, on && { color: C.onLime }]} numberOfLines={1}>
+              {o.label}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
 export function SectionTitle({ children, right, icon }) {
   return (
     <View style={st.sectionRow}>
@@ -242,6 +265,10 @@ export const st = StyleSheet.create({
     marginTop: 20,
     marginBottom: 10,
   },
+  segment: { flexDirection: 'row', backgroundColor: C.surface, borderRadius: 14, padding: 4, borderWidth: 1, borderColor: C.border },
+  segBtn: { flex: 1, flexDirection: 'row', gap: 6, paddingVertical: 10, paddingHorizontal: 4, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
+  segOn: { backgroundColor: C.lime },
+  segTxt: { fontFamily: F.bold, color: C.muted, fontSize: 13 },
   sectionBar: { width: 4, height: 18, borderRadius: 2, backgroundColor: C.lime },
   section: { fontFamily: F.display, fontSize: 21, color: C.text, letterSpacing: 1 },
   row: {

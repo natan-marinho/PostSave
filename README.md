@@ -1,7 +1,7 @@
 # PostSave
 
-App Android **nativo e open source** (React Native + Expo SDK 58) para organizar os posts das redes sociais em pastas
-e guardar os prompts de IA usados para criar legendas e artes.
+App Android **nativo e open source** (React Native + Expo SDK 58) para a barbearia organizar os posts do Instagram em pastas
+e criar legendas e artes com prompts de IA prontos para barbearia.
 
 Sem servidor, sem login e sem anúncios: tudo fica salvo no próprio celular.
 Tem a mesma identidade visual do app Clube Studio 8 (verde-limão #C4DC1E, preto #111111 e grafite,
@@ -13,34 +13,36 @@ títulos em Bebas Neue e textos em Montserrat).
 
 | Tela | O que faz |
 |---|---|
-| **Posts** | Uma pasta para cada post, com capa, status (Rascunho, Pronto, Postado) e filtro por status. Dentro da pasta: subir fotos da galeria ou da câmera, mudar a ordem do carrossel, escolher a capa, escrever ou colar a legenda, **enviar a foto com um prompt para o chat de IA** e salvar tudo num álbum da galeria na hora de postar. |
-| **Prompts** | Biblioteca de prompts com categorias (Legenda, Imagem, Ideias, Outros), busca, contador de uso e os botões **Copiar** e **Abrir chat**. Já vem com 6 prompts prontos. Escolha o chat usado: ChatGPT, Gemini ou Claude. |
+| **Posts** | Pastas separadas em **A fazer**, **Prontos** e **Postados**. Cada pasta tem um tipo (Corte, Barba, Promoção, Equipe, Produto, Aviso) e é feita em 3 etapas: **1 Fotos** (galeria ou câmera, ordem do carrossel, capa), **2 Legenda** (criar com IA e colar a resposta) e **3 Postar** (salvar no álbum da galeria, copiar a legenda, abrir o Instagram e marcar como postado). |
+| **Prompts** | 13 prompts prontos para barbearia, separados em Legendas, Fotos e artes, Ideias e Respostas. Cada prompt tem campos para preencher (ex.: nome do corte, preço, validade) e o app pergunta antes de copiar. Dá para criar os seus usando `{Campo}`. |
+| **Ajustes** (engrenagem) | Perfil da barbearia (nome, bairro, Instagram, WhatsApp, público, tom de voz, diferenciais), que vai no começo de todo prompt, e o chat usado: ChatGPT, Gemini ou Claude. |
 
 ### Fluxo foto + prompt → chat
 
-1. Abra a pasta e toque numa foto (ou use **Criar com IA → Foto + prompt**, que usa a capa).
-2. Escolha o prompt. Ele é copiado.
-3. A lista de compartilhamento do Android abre: escolha o ChatGPT (ou outro chat).
-4. No chat, segure no campo de mensagem e toque em **Colar**.
-5. Copie a resposta, volte ao PostSave e toque em **Colar do chat** na legenda.
+1. Na etapa **Legenda**, toque em **Criar legenda com IA** (ou abra uma foto e toque em **Mandar para o chat**).
+2. Escolha o prompt. Os que combinam com o tipo do post aparecem primeiro.
+3. Preencha os campos e toque em **Copiar e enviar foto**.
+4. Na lista do Android, escolha o ChatGPT. Quando a foto aparecer, cole o prompt e envie.
+5. Copie a resposta, volte ao PostSave e toque em **Colar do chat**.
 
 ## Estrutura
 
 ```
 App.js                         cabeçalho da marca, barra inferior e fontes
-src/data.js                    pastas, prompts e chat escolhido (contexto compartilhado)
+src/data.js                    pastas, prompts, perfil da barbearia e chat (contexto compartilhado)
 src/fotos.js                   galeria, câmera, cópia para o app, compartilhar e salvar na galeria
 src/posts/PostsScreen.js       grade de pastas
-src/posts/PastaScreen.js       pasta aberta (fotos, IA, legenda, status)
+src/posts/PastaScreen.js       pasta aberta em 3 etapas (fotos, legenda, postar)
 src/posts/Visualizador.js      foto em tela cheia com as ações
-src/posts/EscolherPrompt.js    lista para escolher o prompt
 src/prompts/PromptsScreen.js
-src/prompts/padrao.js          prompts que vêm no app, categorias e chats
+src/prompts/UsarPrompt.js      escolher, preencher os campos e copiar o prompt
+src/ajustes/Ajustes.js         perfil da barbearia e chat de IA
+src/prompts/padrao.js          tipos de post, prompts de barbearia, perfil inicial e chats
 src/theme.js · src/components.js · src/storage.js · src/date.js
 plugins/withCmakeVersion.js    corrige o build no Windows (caminhos > 260 caracteres)
 ```
 
-Chaves no AsyncStorage: `ps:pastas`, `ps:prompts`, `ps:chat`.
+Chaves no AsyncStorage: `ps:pastas`, `ps:prompts:v2`, `ps:perfil`, `ps:chat`.
 As fotos são copiadas para `Documentos/fotos` dentro do app, então continuam no PostSave mesmo se forem apagadas da galeria.
 
 ## Rodar e gerar o APK (local, sem conta Expo)
@@ -73,7 +75,8 @@ Nada é enviado para a internet pelo app. O chat de IA só recebe o que você me
 - [ ] Foto + prompt: o prompt é copiado e a lista de apps abre com o ChatGPT.
 - [ ] "Colar do chat" e "Copiar legenda".
 - [ ] "Salvar fotos na galeria" cria o álbum com as fotos na ordem certa.
-- [ ] Criar, editar, buscar e excluir prompts; trocar o chat (ChatGPT, Gemini, Claude).
+- [ ] Preencher o perfil da barbearia e conferir que ele aparece em "Ver o prompt completo".
+- [ ] Usar um prompt com campos; criar um prompt próprio com `{Campo}`; trocar o chat nos Ajustes.
 
 ## Licença
 

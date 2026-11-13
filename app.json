@@ -1,0 +1,57 @@
+{
+  "expo": {
+    "name": "PostSave",
+    "slug": "postsave",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0E0E0E",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "app.postsave"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#111111",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "package": "app.postsave",
+      "versionCode": 1,
+      "blockedPermissions": ["android.permission.RECORD_AUDIO"]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "O PostSave usa suas fotos para montar as pastas dos posts.",
+          "cameraPermission": "O PostSave usa a câmera para tirar fotos dos posts.",
+          "microphonePermission": false
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "O PostSave usa suas fotos para montar as pastas dos posts.",
+          "savePhotosPermission": "O PostSave salva as fotos das pastas na galeria para você postar.",
+          "granularPermissions": ["photo"]
+        }
+      ],
+      "./plugins/withCmakeVersion",
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "backgroundColor": "#111111",
+          "imageWidth": 220
+        }
+      ]
+    ]
+  }
+}
